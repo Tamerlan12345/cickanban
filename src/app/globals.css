@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --bg-dark: #070512;
+  --bg-panel: rgba(18, 12, 38, 0.65);
+  --bg-card: rgba(28, 20, 58, 0.45);
+  --bg-card-hover: rgba(38, 28, 74, 0.6);
+  --bg-input: rgba(10, 6, 22, 0.8);
+  
+  --centras-red: #E5001A;
+  --centras-violet: #7A1B8C;
+  --centras-blue: #1E3CFF;
+  --centras-gradient: linear-gradient(135deg, var(--centras-red) 0%, var(--centras-violet) 50%, var(--centras-blue) 100%);
+  --centras-gradient-horizontal: linear-gradient(90deg, var(--centras-red) 0%, var(--centras-violet) 50%, var(--centras-blue) 100%);
+  --centras-gradient-hover: linear-gradient(135deg, #ff1e38 0%, #9c27b0 50%, #425cff 100%);
+  
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(255, 255, 255, 0.16);
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: #B1ADC5;
+  --text-muted: #6B6785;
+  
+  --shadow-premium: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --glow-red: 0 0 15px rgba(229, 0, 26, 0.3);
+  --glow-blue: 0 0 15px rgba(30, 60, 255, 0.3);
+
+  /* Task Statuses Colors */
+  --status-backlog: #4A5568;
+  --status-todo: #3182CE;
+  --status-in-progress: #DD6B20;
+  --status-review: #805AD5;
+  --status-done: #38A169;
+
+  /* Task Priorities Colors */
+  --priority-urgent: #E53E3E;
+  --priority-high: #DD6B20;
+  --priority-medium: #D69E2E;
+  --priority-low: #3182CE;
+  --priority-none: #718096;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  height: 100vh;
+}
+
+/* Glassmorphism scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Base components styling */
+.glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-premium);
+}
+
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+}
+
+/* Custom Gradients Text */
+.centras-text-gradient {
+  background: var(--centras-gradient-horizontal);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Inputs & Buttons */
+.premium-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.premium-input:focus {
+  border-color: var(--centras-violet);
+  box-shadow: 0 0 0 2px rgba(122, 27, 140, 0.2);
+}
+
+.premium-btn {
+  background: var(--centras-gradient);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.premium-btn:hover {
+  background: var(--centras-gradient-hover);
+  transform: translateY(-1px);
+}
+
+.premium-btn:active {
+  transform: translateY(1px);
+}
+
+.premium-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.premium-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-active);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
