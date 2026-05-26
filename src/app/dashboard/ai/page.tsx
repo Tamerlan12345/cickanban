@@ -26,7 +26,7 @@ export default function AICoachPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'ai',
-      text: 'Привет! Я проанализировал ваш проект и составил дашборд. 🧠\nЕсли у вас есть конкретные вопросы по задачам, нагрузке или планированию спринта — напишите мне ниже!',
+      text: 'Добрый день! Я проанализировал ваш проект и сформировал дашборд.\nЕсли у вас есть конкретные вопросы по задачам, нагрузке или планированию спринта — напишите ниже.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -110,9 +110,9 @@ export default function AICoachPage() {
       <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#fff', fontFamily: "'Outfit', sans-serif" }}>
-            🧠 Интеллектуальный дашборд PM
+            Аналитика и аудит проекта
           </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Автоматический аудит проекта и инсайты от Gemini AI</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Автоматический анализ эффективности процессов и рекомендации</p>
         </div>
         {projectId && (
           <button onClick={() => loadInsights(projectId)} disabled={insightsLoading} className="premium-btn-secondary" style={{ padding: '8px 14px', fontSize: '13px' }}>
@@ -144,7 +144,7 @@ export default function AICoachPage() {
             }}
           >
             <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#fff', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              📈 Здоровье проекта (Project Health)
+              Здоровье проекта (Project Health)
             </h3>
             <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
               {insights.healthSummary}
@@ -156,7 +156,7 @@ export default function AICoachPage() {
             {/* Bottlenecks Card */}
             <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#fff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🔥 Риски и Узкие места (Bottlenecks)
+                Риски и узкие места (Bottlenecks)
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {insights.bottlenecks.map((item, i) => (
@@ -184,7 +184,7 @@ export default function AICoachPage() {
             {/* Recommendations Card */}
             <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#fff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                💡 Рекомендации ИИ по процессам
+                Рекомендации по улучшению процессов
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {insights.recommendations.map((item, i) => (
@@ -203,7 +203,7 @@ export default function AICoachPage() {
                       alignItems: 'center',
                     }}
                   >
-                    <span style={{ color: 'var(--centras-violet)', fontSize: '16px' }}>✨</span>
+                    <span style={{ color: 'var(--centras-violet)', fontSize: '18px', fontWeight: 'bold' }}>•</span>
                     <span>{item}</span>
                   </div>
                 ))}
@@ -227,7 +227,7 @@ export default function AICoachPage() {
               }}
             >
               <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                💬 Задать уточняющие вопросы ассистенту Gemini
+                Задать уточняющие вопросы по анализу проекта
               </h3>
               <span style={{ transition: 'transform 0.2s', transform: showChat ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                 ▼
@@ -277,7 +277,7 @@ export default function AICoachPage() {
                       <div style={{ width: '4px', height: '4px', background: 'var(--centras-violet)', borderRadius: '50%', animation: 'chat-loading-pulse 0.8s infinite alternate' }} />
                       <div style={{ width: '4px', height: '4px', background: 'var(--centras-violet)', borderRadius: '50%', animation: 'chat-loading-pulse 0.8s infinite alternate 0.2s' }} />
                       <div style={{ width: '4px', height: '4px', background: 'var(--centras-violet)', borderRadius: '50%', animation: 'chat-loading-pulse 0.8s infinite alternate 0.4s' }} />
-                      <span>ИИ печатает ответ...</span>
+                      <span>Анализирую...</span>
                     </div>
                   )}
                   <div ref={messagesEndRef} />

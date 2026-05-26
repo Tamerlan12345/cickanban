@@ -64,8 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, projects }) => {
   const navItems = [
     { label: '📋 Панель управления', path: '/dashboard' },
     { label: '📊 Kanban-доска', path: '/dashboard/board' },
-    { label: '💬 Общие чаты', path: '/dashboard/chat' },
-    { label: '🧠 ScramBan AI', path: '/dashboard/ai' },
+    { label: '📈 ScramBan AI', path: '/dashboard/ai' },
   ];
 
   return (
@@ -86,8 +85,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, projects }) => {
         <Logo size="sm" />
       </div>
 
-      {/* Project selector */}
-      <div style={{ marginBottom: '28px' }}>
+      {/* Project info (read-only) */}
+      <div style={{ marginBottom: '28px', paddingLeft: '8px' }}>
         <label
           style={{
             fontSize: '11px',
@@ -97,34 +96,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, projects }) => {
             letterSpacing: '1px',
             marginBottom: '8px',
             display: 'block',
-            paddingLeft: '8px',
           }}
         >
           Активный Проект
         </label>
-        {projects.length > 0 ? (
-          <select
-            value={selectedProject?.id || ''}
-            onChange={(e) => handleProjectChange(e.target.value)}
-            className="premium-input"
-            style={{
-              width: '100%',
-              background: 'rgba(255, 255, 255, 0.03)',
-              cursor: 'pointer',
-              fontWeight: 500,
-            }}
-          >
-            {projects.map((project) => (
-              <option key={project.id} value={project.id} style={{ background: '#0b081a', color: '#fff' }}>
-                🚀 {project.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <div style={{ padding: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Нет активных проектов
-          </div>
-        )}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '14.5px',
+            fontWeight: 600,
+            color: '#fff',
+            background: 'rgba(255, 255, 255, 0.02)',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+          }}
+        >
+          🚀 {selectedProject ? selectedProject.name : 'Centras ScramBan Project'}
+        </div>
       </div>
 
       {/* Navigation links */}

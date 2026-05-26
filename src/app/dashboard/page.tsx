@@ -267,7 +267,7 @@ export default async function DashboardPage() {
           {/* Quick Actions */}
           <div className="glass-card" style={{ padding: '30px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
-              💡 Быстрые действия
+              Быстрые действия
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <Link

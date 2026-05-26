@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Subtask {
@@ -99,23 +99,124 @@ export default function BoardPage() {
   // Autosave status indicator
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | null>('saved');
 
+  // Chat Widget States
+  const [showChatDrawer, setShowChatDrawer] = useState(false);
+  const [chatChannels, setChatChannels] = useState<any[]>([]);
+  const [selectedChatChannel, setSelectedChatChannel] = useState<any | null>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+
+  const chatMessagesContainerRef = useRef<HTMLDivElement>(null);
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const savedProjectId = localStorage.getItem('selected_project_id');
-    if (savedProjectId) {
-      setProjectId(savedProjectId);
-    } else {
-      fetch('/api/auth/me')
+    // Get current user details and project
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setCurrentUser(data.user);
+        }
+        
+        const savedProjectId = localStorage.getItem('selected_project_id');
+        if (savedProjectId) {
+          setProjectId(savedProjectId);
+        } else if (data.projects && data.projects.length > 0) {
+          setProjectId(data.projects[0].id);
+          localStorage.setItem('selected_project_id', data.projects[0].id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((e) => console.error(e));
+  }, []);
+
+  const loadChatMessages = async (channelId: string) => {
+    try {
+      const res = await fetch(`/api/channels/${channelId}/messages`);
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(data);
+      }
+    } catch (e) {
+      console.error('Error loading chat messages:', e);
+    }
+  };
+
+  const handleSendChatMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !selectedChatChannel || !currentUser) return;
+    const tempContent = chatInput;
+    setChatInput('');
+
+    // Optimistic Update
+    const tempMsg = {
+      id: Math.random().toString(),
+      content: tempContent,
+      createdAt: new Date().toISOString(),
+      userId: currentUser.id,
+      user: {
+        id: currentUser.id,
+        fullName: currentUser.fullName,
+        avatarUrl: null
+      }
+    };
+    setChatMessages((prev) => [...prev, tempMsg]);
+
+    try {
+      const res = await fetch(`/api/channels/${selectedChatChannel.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: tempContent }),
+      });
+      if (res.ok) {
+        loadChatMessages(selectedChatChannel.id);
+      } else {
+        // remove optimistic message if failed
+        setChatMessages((prev) => prev.filter((m) => m.id !== tempMsg.id));
+      }
+    } catch (e) {
+      console.error(e);
+      setChatMessages((prev) => prev.filter((m) => m.id !== tempMsg.id));
+    }
+  };
+
+  // Poll chat messages every 3s when drawer is open
+  useEffect(() => {
+    let intervalId: any;
+    if (showChatDrawer && selectedChatChannel) {
+      loadChatMessages(selectedChatChannel.id);
+      intervalId = setInterval(() => {
+        loadChatMessages(selectedChatChannel.id);
+      }, 3000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [showChatDrawer, selectedChatChannel]);
+
+  // Load chat channels when drawer is opened
+  useEffect(() => {
+    if (projectId && showChatDrawer && chatChannels.length === 0) {
+      fetch(`/api/projects/${projectId}/channels`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.projects && data.projects.length > 0) {
-            setProjectId(data.projects[0].id);
-            localStorage.setItem('selected_project_id', data.projects[0].id);
-          } else {
-            setLoading(false);
+          setChatChannels(data);
+          if (data.length > 0) {
+            setSelectedChatChannel(data[0]);
           }
-        });
+        })
+        .catch((e) => console.error(e));
     }
-  }, []);
+  }, [projectId, showChatDrawer, chatChannels.length]);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (showChatDrawer) {
+      chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, showChatDrawer]);
 
   const loadBoardData = async () => {
     if (!projectId) return;
@@ -515,6 +616,13 @@ export default function BoardPage() {
             </button>
           </div>
 
+          <button
+            onClick={() => setShowChatDrawer(true)}
+            className="premium-btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '36px', padding: '0 14px', fontSize: '13px' }}
+          >
+            💬 Чат команды
+          </button>
           <button onClick={() => setShowCreateModal(true)} className="premium-btn">
             ➕ Создать задачу
           </button>
@@ -1387,6 +1495,169 @@ export default function BoardPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {showChatDrawer && selectedChatChannel && (
+        <div
+          style={{
+            position: 'fixed',
+            right: 0,
+            top: 0,
+            width: '380px',
+            height: '100vh',
+            background: 'var(--bg-panel)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderLeft: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-premium)',
+            zIndex: 200,
+            display: 'flex',
+            flexDirection: 'column',
+            animation: 'slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          }}
+        >
+          {/* Drawer Header */}
+          <div
+            style={{
+              padding: '24px 20px 16px 20px',
+              borderBottom: '1px solid var(--border-color)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                💬 {selectedChatChannel.name}
+              </h3>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                {selectedChatChannel.type === 'PROJECT' ? 'Проектный чат команды' : 'Чат Scrum/Kanban доски'}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowChatDrawer(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '20px',
+                cursor: 'pointer',
+                padding: '4px',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Channel selector (tabs) if there are multiple channels */}
+          {chatChannels.length > 1 && (
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', padding: '4px' }}>
+              {chatChannels.map((chan) => (
+                <button
+                  key={chan.id}
+                  onClick={() => setSelectedChatChannel(chan)}
+                  style={{
+                    flexGrow: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    color: selectedChatChannel.id === chan.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    borderBottom: selectedChatChannel.id === chan.id ? '2px solid var(--centras-red)' : '2.5px solid transparent',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {chan.type === 'PROJECT' ? '📢 Общий' : '📋 Доска'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Messages Area */}
+          <div
+            style={{
+              flexGrow: 1,
+              padding: '20px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            {chatMessages.length > 0 ? (
+              chatMessages.map((msg) => {
+                const isMe = currentUser ? msg.userId === currentUser.id : false;
+                return (
+                  <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px' }}>
+                    {!isMe && (
+                      <div
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: 'var(--centras-gradient)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          color: '#fff',
+                        }}
+                      >
+                        {msg.user.fullName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxWidth: '75%' }}>
+                      {!isMe && <span style={{ fontSize: '10px', color: 'var(--text-muted)', paddingLeft: '2px' }}>{msg.user.fullName}</span>}
+                      <div
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '10px',
+                          background: isMe ? 'var(--centras-gradient)' : 'var(--bg-card)',
+                          color: '#fff',
+                          fontSize: '13px',
+                          lineHeight: '1.4',
+                          border: isMe ? 'none' : '1px solid var(--border-color)',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {msg.content}
+                      </div>
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)', alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ textAlign: 'center', margin: 'auto', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                Сообщений пока нет. Напишите что-нибудь!
+              </div>
+            )}
+            <div ref={chatMessagesEndRef} />
+          </div>
+
+          {/* Input Form */}
+          <form onSubmit={handleSendChatMessage} style={{ padding: '16px 20px 24px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              placeholder="Написать сообщение..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              className="premium-input"
+              style={{ flexGrow: 1, height: '38px', fontSize: '13.5px' }}
+            />
+            <button type="submit" className="premium-btn" style={{ height: '38px', padding: '0 16px' }} disabled={!chatInput.trim()}>
+              Отправить
+            </button>
+          </form>
         </div>
       )}
 

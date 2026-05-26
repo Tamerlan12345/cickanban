@@ -195,30 +195,7 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <div
-            style={{
-              marginTop: '24px',
-              textAlign: 'center',
-              fontSize: '14px',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            {isLogin ? 'Еще нет аккаунта?' : 'Уже есть аккаунт?'}{' '}
-            <span
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-              }}
-              style={{
-                color: 'var(--centras-red)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              {isLogin ? 'Создать' : 'Войти'}
-            </span>
-          </div>
+          {/* Регистрация отключена */}
         </div>
       </div>
       <style jsx global>{`

@@ -17,24 +17,15 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Check if Gemini API key is missing or is placeholder
-    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
-      return NextResponse.json({
-        subtasks: [
-          "Изучить требования к задаче",
-          "Разработать техническое решение",
-          "Реализовать базовый функционал",
-          "Протестировать граничные случаи",
-          "Провести ревью и слияние изменений"
-        ],
-        isMock: true
-      });
-    }
+    try {
+      if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY_HERE') {
+        throw new Error('Missing or placeholder Gemini API key');
+      }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const prompt = `
+      const prompt = `
 Вы — опытный технический лид. Разбейте (декомпозируйте) указанную задачу на список конкретных подзадач (чек-лист).
 Название задачи: "${title}"
 Описание задачи: "${description || 'Описание отсутствует'}"
@@ -45,32 +36,65 @@ export async function POST(request: Request) {
 Не пишите никакого другого текста, кроме чистого JSON. Не используйте markdown разметку \`\`\`json.
 `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text().trim();
 
-    const cleanJsonString = responseText
-      .replace(/^```json/i, '')
-      .replace(/^```/i, '')
-      .replace(/```$/, '')
-      .trim();
+      const cleanJsonString = responseText
+        .replace(/^```json/i, '')
+        .replace(/^```/i, '')
+        .replace(/```$/, '')
+        .trim();
 
-    try {
       const data = JSON.parse(cleanJsonString);
       return NextResponse.json(data);
-    } catch (parseError) {
-      console.error('Failed to parse Gemini breakdown response:', responseText);
+    } catch (error: any) {
+      console.warn('Gemini Breakdown failed, using fallback:', error);
+      
+      // Return a smart list of subtasks based on keywords in the title
+      const lowerTitle = title.toLowerCase();
+      let subtasks = [
+        "Изучить требования к задаче",
+        "Спроектировать архитектуру и API",
+        "Реализовать программный код",
+        "Провести ручное и автотестирование",
+        "Сдать задачу на код-ревью"
+      ];
+
+      if (lowerTitle.includes("баг") || lowerTitle.includes("ошибк") || lowerTitle.includes("исправ")) {
+        subtasks = [
+          "Воспроизвести ошибку и проанализировать логи",
+          "Локализовать проблемный участок кода",
+          "Внести исправления в код",
+          "Убедиться в отсутствии регрессионных багов",
+          "Проверить исправление и закрыть задачу"
+        ];
+      } else if (lowerTitle.includes("верстк") || lowerTitle.includes("дизайн") || lowerTitle.includes("ui") || lowerTitle.includes("ux")) {
+        subtasks = [
+          "Изучить макеты дизайна и требования к интерфейсу",
+          "Создать HTML-структуру и стили компонентов",
+          "Обеспечить адаптивность и кроссбраузерность",
+          "Добавить интерактивные элементы и ховеры",
+          "Проверить на соответствие pixel perfect"
+        ];
+      } else if (lowerTitle.includes("бд") || lowerTitle.includes("баз") || lowerTitle.includes("таблиц") || lowerTitle.includes("prisma")) {
+        subtasks = [
+          "Описать новую схему данных в prisma.schema",
+          "Сгенерировать и применить миграцию БД",
+          "Разработать API-ручки для интеграции",
+          "Проверить корректность связи таблиц",
+          "Инициализировать базу тестовыми данными"
+        ];
+      }
+
       return NextResponse.json({
-        subtasks: [
-          "Проанализировать задачу: " + title,
-          "Реализовать требования согласно описанию",
-          "Выполнить тестирование функционала"
-        ]
+        subtasks,
+        isMock: true
       });
     }
   } catch (error: any) {
-    console.error('Gemini breakdown error:', error);
+    console.error('AI Breakdown API root error:', error);
     return NextResponse.json(
-      { error: 'Ошибка взаимодействия с ИИ Gemini: ' + error.message },
+      { error: 'Внутренняя ошибка сервера: ' + error.message },
       { status: 500 }
     );
   }
