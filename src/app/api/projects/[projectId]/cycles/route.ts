@@ -7,63 +7,65 @@ type Params = Promise<{ projectId: string }>;
 export async function GET(request: Request, { params }: { params: Params }) {
   try {
     const user = await getSessionUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
 
     const { projectId } = await params;
 
-    const membership = await db.projectMember.findFirst({
-      where: { projectId, userId: user.id },
-    });
-
-    if (!membership) {
-      return NextResponse.json({ error: 'Нет доступа к проекту' }, { status: 403 });
-    }
+    const membership = await db.projectMember.findFirst({ where: { projectId, userId: user.id } });
+    if (!membership) return NextResponse.json({ error: 'Нет доступа' }, { status: 403 });
 
     const cycles = await db.cycle.findMany({
       where: { projectId },
-      orderBy: { startDate: 'desc' },
+      include: {
+        tasks: {
+          select: { id: true, status: true, points: true, title: true, priority: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(cycles);
+    // Augment each cycle with progress stats
+    const augmented = cycles.map((c) => {
+      const total = c.tasks.length;
+      const done  = c.tasks.filter((t) => t.status === 'DONE').length;
+      const totalSP = c.tasks.reduce((s, t) => s + (t.points || 0), 0);
+      const doneSP  = c.tasks.filter((t) => t.status === 'DONE').reduce((s, t) => s + (t.points || 0), 0);
+      return {
+        ...c,
+        progress: total > 0 ? Math.round((done / total) * 100) : 0,
+        taskCount: total,
+        doneCount: done,
+        totalSP,
+        doneSP,
+      };
+    });
+
+    return NextResponse.json(augmented);
   } catch (error: any) {
     console.error('Fetch cycles error:', error);
-    return NextResponse.json(
-      { error: 'Внутренняя ошибка при загрузке спринтов' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Ошибка загрузки спринтов' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request, { params }: { params: Params }) {
   try {
     const user = await getSessionUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
 
     const { projectId } = await params;
-
-    const membership = await db.projectMember.findFirst({
-      where: { projectId, userId: user.id },
-    });
-
+    const membership = await db.projectMember.findFirst({ where: { projectId, userId: user.id } });
     if (!membership || membership.role === 'GUEST') {
-      return NextResponse.json({ error: 'Недостаточно прав для создания спринта' }, { status: 403 });
+      return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
     }
 
-    const body = await request.json();
-    const { name, description, startDate, endDate } = body;
-
-    if (!name) {
-      return NextResponse.json({ error: 'Название спринта обязательно' }, { status: 400 });
-    }
+    const { name, description, startDate, endDate } = await request.json();
+    if (!name?.trim()) return NextResponse.json({ error: 'Название обязательно' }, { status: 400 });
 
     const cycle = await db.cycle.create({
       data: {
-        name,
-        description,
+        name: name.trim(),
+        description: description || null,
+        status: 'PLANNING',
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         projectId,
@@ -73,9 +75,6 @@ export async function POST(request: Request, { params }: { params: Params }) {
     return NextResponse.json(cycle);
   } catch (error: any) {
     console.error('Create cycle error:', error);
-    return NextResponse.json(
-      { error: 'Внутренняя ошибка при создании спринта' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Ошибка создания спринта' }, { status: 500 });
   }
 }

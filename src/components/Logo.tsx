@@ -4,99 +4,158 @@ interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   style?: React.CSSProperties;
+  collapsed?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', style }) => {
-  const dimensions = {
-    sm: { width: 140, height: 32, iconSize: 20, fontSize: '16px', subFontSize: '8px' },
-    md: { width: 220, height: 48, iconSize: 28, fontSize: '22px', subFontSize: '10px' },
-    lg: { width: 280, height: 64, iconSize: 36, fontSize: '28px', subFontSize: '12px' },
+export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', style, collapsed = false }) => {
+  const dims = {
+    sm: { iconSize: 28, fontSize: '15px', subSize: '9px', gap: 8 },
+    md: { iconSize: 34, fontSize: '18px', subSize: '10px', gap: 10 },
+    lg: { iconSize: 42, fontSize: '22px', subSize: '11px', gap: 12 },
   }[size];
 
   return (
-    <div className={`flex items-center gap-3 select-none ${className}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', ...style }}>
-      {/* Centras Brand Icon */}
+    <div
+      className={className}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: dims.gap,
+        userSelect: 'none',
+        ...style,
+      }}
+    >
+      {/* Icon: Hexagon + CS monogram */}
       <svg
-        width={dimensions.iconSize}
-        height={dimensions.iconSize}
-        viewBox="0 0 32 32"
+        width={dims.iconSize}
+        height={dims.iconSize}
+        viewBox="0 0 40 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ flexShrink: 0 }}
       >
         <defs>
-          <linearGradient id="centrasGradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#E5001A" />
-            <stop offset="50%" stopColor="#7A1B8C" />
+          <linearGradient id="logo-grad-a" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#E5001A" />
+            <stop offset="48%"  stopColor="#7A1B8C" />
             <stop offset="100%" stopColor="#1E3CFF" />
           </linearGradient>
-          <linearGradient id="cardGlow" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.0" />
+          <linearGradient id="logo-grad-b" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#ff4560" />
+            <stop offset="100%" stopColor="#3d5aff" />
           </linearGradient>
+          <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
-        
-        {/* Board Background grid - 3 Columns */}
-        <line x1="10.5" y1="2" x2="10.5" y2="30" stroke="rgba(255, 255, 255, 0.08)" strokeDasharray="2 2" />
-        <line x1="21.5" y1="2" x2="21.5" y2="30" stroke="rgba(255, 255, 255, 0.08)" strokeDasharray="2 2" />
 
-        {/* Column 1 (Backlog): 2 Stacked small cards */}
-        <rect x="2" y="4" width="6" height="8" rx="1.5" fill="url(#centrasGradient)" opacity="0.55" />
-        <rect x="2" y="14" width="6" height="8" rx="1.5" fill="url(#centrasGradient)" opacity="0.35" />
+        {/* Hexagon background */}
+        <path
+          d="M20 2 L35.6 11 L35.6 29 L20 38 L4.4 29 L4.4 11 Z"
+          fill="url(#logo-grad-a)"
+          opacity="0.12"
+        />
+        <path
+          d="M20 2 L35.6 11 L35.6 29 L20 38 L4.4 29 L4.4 11 Z"
+          fill="none"
+          stroke="url(#logo-grad-a)"
+          strokeWidth="1.5"
+          opacity="0.7"
+        />
 
-        {/* Column 2 (In Progress): Active glowing card with white gradient highlight */}
-        <rect x="13" y="8" width="6" height="14" rx="2" fill="url(#centrasGradient)" />
-        <rect x="13" y="8" width="6" height="14" rx="2" fill="url(#cardGlow)" />
-        <circle cx="16" cy="15" r="1.5" fill="#FFFFFF" />
+        {/* Inner accent hex */}
+        <path
+          d="M20 7 L30.4 13 L30.4 27 L20 33 L9.6 27 L9.6 13 Z"
+          fill="none"
+          stroke="url(#logo-grad-b)"
+          strokeWidth="0.75"
+          opacity="0.25"
+        />
 
-        {/* Column 3 (Done): Completed card with checkmark style */}
-        <rect x="24" y="4" width="6" height="10" rx="1.5" fill="url(#centrasGradient)" opacity="0.8" />
-        {/* Completed check icon styled inside column 3 */}
-        <path d="M25.5 9L26.5 10L28.5 8" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* C — left arc */}
+        <path
+          d="M22 13.5 C18 13.5 14.5 16.4 14.5 20 C14.5 23.6 18 26.5 22 26.5"
+          stroke="url(#logo-grad-a)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          fill="none"
+          filter="url(#logo-glow)"
+        />
 
-        {/* Workflow flow line (curved arrow showing progress left-to-right) */}
-        <path d="M6 8C10 8 12 15 16 15C20 15 22 9 26 9" stroke="url(#centrasGradient)" strokeWidth="1.2" strokeDasharray="1 2" opacity="0.75" />
+        {/* S — right curve */}
+        <path
+          d="M21 17 C24 17 26 18.2 26 19.5 C26 20.8 24 21.5 21 21.5 C18 21.5 16 22.5 16 24 C16 25.5 18.5 27 22 27"
+          stroke="url(#logo-grad-b)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          fill="none"
+          opacity="0.9"
+        />
+
+        {/* Corner accent dots */}
+        <circle cx="20" cy="4"  r="1.2" fill="url(#logo-grad-a)" opacity="0.6" />
+        <circle cx="20" cy="36" r="1.2" fill="url(#logo-grad-a)" opacity="0.4" />
       </svg>
 
-      {/* Centras ScramBan Text */}
-      <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.1' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline' }}>
-          <span
-            className="centras-text-gradient"
-            style={{
-              fontFamily: "'Outfit', 'Inter', sans-serif",
-              fontWeight: 700,
-              fontSize: dimensions.fontSize,
-              letterSpacing: '-0.5px',
-            }}
-          >
-            centras
-          </span>
+      {/* Text — hide when collapsed */}
+      {!collapsed && (
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+            <span
+              style={{
+                fontFamily: "'Outfit', 'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: dims.fontSize,
+                background: 'linear-gradient(90deg, #E5001A 0%, #7A1B8C 55%, #1E3CFF 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                letterSpacing: '-0.4px',
+              }}
+            >
+              centras
+            </span>
+            <span
+              style={{
+                fontFamily: "'Outfit', 'Inter', sans-serif",
+                fontWeight: 300,
+                fontSize: dims.fontSize,
+                color: 'rgba(255,255,255,0.85)',
+                letterSpacing: '-0.2px',
+              }}
+            >
+              .scram
+            </span>
+            <span
+              style={{
+                fontFamily: "'Outfit', 'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: dims.fontSize,
+                color: '#ffffff',
+                letterSpacing: '-0.2px',
+              }}
+            >
+              ban
+            </span>
+          </div>
           <span
             style={{
               fontFamily: "'Inter', sans-serif",
-              fontWeight: 300,
-              fontSize: dimensions.fontSize,
-              color: '#FFFFFF',
-              marginLeft: '2px',
+              fontWeight: 400,
+              fontSize: dims.subSize,
+              color: 'rgba(229, 0, 26, 0.75)',
+              letterSpacing: '2.5px',
+              textTransform: 'uppercase',
             }}
           >
-            ScramBan
+            project board
           </span>
         </div>
-        <span
-          style={{
-            fontFamily: "'Inter', sans-serif",
-            fontWeight: 400,
-            fontSize: dimensions.subFontSize,
-            color: '#E5001A',
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
-            marginTop: '2px',
-          }}
-        >
-          insurance
-        </span>
-      </div>
+      )}
     </div>
   );
 };
