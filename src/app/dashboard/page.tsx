@@ -272,53 +272,13 @@ export default async function DashboardPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <Link
                 href="/dashboard/board?create=true"
-                style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border-color)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--centras-violet)';
-                  e.currentTarget.style.background = 'rgba(122, 27, 140, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                }}
+                className="dashboard-action-btn-violet"
               >
                 ➕ Создать новую задачу
               </Link>
               <Link
                 href="/dashboard/chat"
-                style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border-color)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--centras-blue)';
-                  e.currentTarget.style.background = 'rgba(30, 60, 255, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                }}
+                className="dashboard-action-btn-blue"
               >
                 💬 Написать команде в чат
               </Link>

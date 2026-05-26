@@ -177,3 +177,42 @@ body {
 .fade-in {
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Dashboard Action Buttons Hover Styles */
+.dashboard-action-btn-violet {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.dashboard-action-btn-violet:hover {
+  border-color: var(--centras-violet);
+  background: rgba(122, 27, 140, 0.1);
+}
+
+.dashboard-action-btn-blue {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.dashboard-action-btn-blue:hover {
+  border-color: var(--centras-blue);
+  background: rgba(30, 60, 255, 0.1);
+}
