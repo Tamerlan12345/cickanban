@@ -198,8 +198,7 @@ export default async function DashboardPage() {
                         borderRadius: 10,
                         transition: 'border-color 0.15s',
                       }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border-active)')}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border-color)')}
+                      className="task-row"
                     >
                       <div
                         style={{

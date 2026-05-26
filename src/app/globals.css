@@ -728,6 +728,9 @@ body {
 .typing-dot:nth-child(3) { animation: pulse-dot 0.9s infinite 0.4s; }
 
 /* ─── Dashboard Action Buttons ───────────────────────────── */
+.task-row { transition: border-color var(--transition-fast); }
+.task-row:hover { border-color: var(--border-active) !important; }
+
 .dashboard-action-btn-violet,
 .dashboard-action-btn-blue {
   display: flex;
