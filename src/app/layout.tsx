@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Centras ScramBan — Управление проектами | Centras Insurance',
-  description: 'Автономная система управления проектами, Kanban-досками, командными спринтами и ИИ-помощником Gemini для страховой компании Centras Insurance.',
+  description: 'Система управления проектами, Kanban-досками и командными спринтами для страховой компании Centras Insurance.',
 };
 
 export default function RootLayout({

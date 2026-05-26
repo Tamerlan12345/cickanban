@@ -398,7 +398,7 @@ export default function BoardPage() {
 
       if (res.ok) {
         const data = await res.json();
-        const justificationText = `ИИ Рекомендовал ${data.points} SP: ${data.justification}`;
+        const justificationText = `Автооценка: ${data.points} SP — ${data.justification}`;
         
         handlePropertyChange('points', data.points);
         handlePropertyChange('aiEstimate', justificationText);
@@ -1210,7 +1210,7 @@ export default function BoardPage() {
                           gap: '4px',
                         }}
                       >
-                        {aiBreakdownLoading ? '⏳ Дополнение...' : '🪄 ИИ дополнить'}
+                        {aiBreakdownLoading ? '⏳ Генерация...' : '✨ Авто-разбивка'}
                       </button>
                     )}
                   </div>
@@ -1274,7 +1274,7 @@ export default function BoardPage() {
                         e.currentTarget.style.background = 'transparent';
                       }}
                     >
-                      {aiBreakdownLoading ? '⏳ ИИ анализирует и разбивает задачу...' : '🪄 Описание длинное. Разбить на подзадачи с помощью Gemini ИИ?'}
+                      {aiBreakdownLoading ? '⏳ Анализирую...' : '✨ Автоматически разбить на подзадачи'}
                     </div>
                   )}
 
@@ -1450,9 +1450,9 @@ export default function BoardPage() {
                         alignItems: 'center',
                         gap: '4px',
                       }}
-                      title="Получить оценку ИИ Gemini на основе названия и описания"
+                      title="Автоматическая оценка сложности по названию и описанию"
                     >
-                      {aiEstimating ? '⏳...' : '🪄 ИИ оценить'}
+                      {aiEstimating ? '⏳...' : 'Оценить'}
                     </button>
                   </div>
                   <input
@@ -1476,7 +1476,7 @@ export default function BoardPage() {
                       }}
                       title={selectedTask.aiEstimate}
                     >
-                      💡 {selectedTask.aiEstimate.replace(/^(ИИ Рекомендация:|ИИ Рекомендовал\s\d+\sSP:)/, '').substring(0, 75)}...
+                      ✨ {selectedTask.aiEstimate.replace(/^(Автооценка:|ИИ Рекомендация:|ИИ Рекомендовал\s\d+\sSP:)/, '').substring(0, 75)}...
                     </div>
                   )}
                 </div>
