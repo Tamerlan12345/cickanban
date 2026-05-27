@@ -3,12 +3,12 @@
 /* ─── Design Tokens ──────────────────────────────────────── */
 :root {
   /* Backgrounds */
-  --bg-dark:        #070512;
-  --bg-panel:       rgba(18, 12, 38, 0.70);
-  --bg-card:        rgba(28, 20, 58, 0.50);
-  --bg-card-hover:  rgba(40, 30, 80, 0.65);
-  --bg-input:       rgba(10, 6, 22, 0.85);
-  --bg-overlay:     rgba(4, 2, 14, 0.80);
+  --bg-dark:        #0b1326;
+  --bg-panel:       rgba(23, 31, 51, 0.70);
+  --bg-card:        rgba(19, 27, 46, 0.50);
+  --bg-card-hover:  rgba(34, 42, 61, 0.65);
+  --bg-input:       rgba(6, 14, 32, 0.85);
+  --bg-overlay:     rgba(6, 14, 32, 0.90);
 
   /* Brand Palette */
   --centras-red:    #E5001A;
@@ -25,7 +25,7 @@
 
   /* Typography */
   --text-primary:   #FFFFFF;
-  --text-secondary: #B1ADC5;
+  --text-secondary: #ccc3d8;
   --text-muted:     #6B6785;
 
   /* Shadows & Glows */

@@ -55,50 +55,39 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', style, 
 
         {/* Hexagon background */}
         <path
-          d="M20 2 L35.6 11 L35.6 29 L20 38 L4.4 29 L4.4 11 Z"
+          d="M20 3 L34.7 11.5 L34.7 28.5 L20 37 L5.3 28.5 L5.3 11.5 Z"
           fill="url(#logo-grad-a)"
-          opacity="0.12"
+          opacity="0.05"
         />
         <path
-          d="M20 2 L35.6 11 L35.6 29 L20 38 L4.4 29 L4.4 11 Z"
+          d="M20 3 L34.7 11.5 L34.7 28.5 L20 37 L5.3 28.5 L5.3 11.5 Z"
           fill="none"
           stroke="url(#logo-grad-a)"
-          strokeWidth="1.5"
-          opacity="0.7"
-        />
-
-        {/* Inner accent hex */}
-        <path
-          d="M20 7 L30.4 13 L30.4 27 L20 33 L9.6 27 L9.6 13 Z"
-          fill="none"
-          stroke="url(#logo-grad-b)"
-          strokeWidth="0.75"
-          opacity="0.25"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.4"
         />
 
         {/* C — left arc */}
         <path
-          d="M22 13.5 C18 13.5 14.5 16.4 14.5 20 C14.5 23.6 18 26.5 22 26.5"
+          d="M23 14 C17 14 14 17 14 20 C14 23 17 26 23 26"
           stroke="url(#logo-grad-a)"
-          strokeWidth="2.5"
+          strokeWidth="3.2"
           strokeLinecap="round"
           fill="none"
-          filter="url(#logo-glow)"
+          opacity="0.95"
         />
 
         {/* S — right curve */}
         <path
-          d="M21 17 C24 17 26 18.2 26 19.5 C26 20.8 24 21.5 21 21.5 C18 21.5 16 22.5 16 24 C16 25.5 18.5 27 22 27"
+          d="M20 17.5 C23.5 17.5 25 18.2 25 19.5 C25 21.2 20.8 21.5 20.2 23 C19.6 24.5 21 26 25 26"
           stroke="url(#logo-grad-b)"
-          strokeWidth="2"
+          strokeWidth="3.2"
           strokeLinecap="round"
           fill="none"
-          opacity="0.9"
+          opacity="0.95"
         />
-
-        {/* Corner accent dots */}
-        <circle cx="20" cy="4"  r="1.2" fill="url(#logo-grad-a)" opacity="0.6" />
-        <circle cx="20" cy="36" r="1.2" fill="url(#logo-grad-a)" opacity="0.4" />
       </svg>
 
       {/* Text — hide when collapsed */}

@@ -681,8 +681,9 @@ export default function BoardPage() {
                         onClick={() => selectTask(task)}
                         className="glass-card"
                         style={{
-                          padding: '16px',
-                          borderRadius: '10px',
+                          padding: '16px 16px 16px 14px',
+                          borderRadius: '8px',
+                          borderLeft: task.priority !== 'NONE' ? `4px solid ${getPriorityColor(task.priority)}` : '1px solid var(--border-color)',
                           cursor: 'grab',
                           opacity: draggedTaskId === task.id ? 0.4 : 1,
                           display: 'flex',
@@ -696,22 +697,9 @@ export default function BoardPage() {
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            <span
-                              style={{
-                                fontSize: '10px',
-                                fontWeight: 700,
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: `${getPriorityColor(task.priority)}22`,
-                                color: getPriorityColor(task.priority),
-                              }}
-                            >
-                              {task.priority !== 'NONE' ? task.priority : 'Без приор.'}
-                            </span>
-
                             {task.points > 0 && (
                               <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(122, 27, 140, 0.15)', color: '#D6BCFA', padding: '2px 6px', borderRadius: '4px', border: '1px dashed rgba(122, 27, 140, 0.4)' }}>
-                                ⚡ {task.points} SP
+                                {task.points} SP
                               </span>
                             )}
                           </div>
@@ -1126,10 +1114,22 @@ export default function BoardPage() {
                           fontWeight: 600,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          gap: '6px',
                         }}
                       >
-                        {aiBreakdownLoading ? '⏳ Генерация...' : '✨ Авто-разбивка'}
+                        {aiBreakdownLoading ? (
+                          '⏳ Генерация...'
+                        ) : (
+                          <>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                              <rect x="3" y="3" width="7" height="9" rx="1" />
+                              <rect x="14" y="3" width="7" height="5" rx="1" />
+                              <rect x="14" y="12" width="7" height="9" rx="1" />
+                              <rect x="3" y="16" width="7" height="5" rx="1" />
+                            </svg>
+                            Авто-разбивка
+                          </>
+                        )}
                       </button>
                     )}
                   </div>
@@ -1193,7 +1193,18 @@ export default function BoardPage() {
                         e.currentTarget.style.background = 'transparent';
                       }}
                     >
-                      {aiBreakdownLoading ? '⏳ Анализирую...' : '✨ Автоматически разбить на подзадачи'}
+                      {aiBreakdownLoading ? (
+                        '⏳ Анализирую...'
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.8 }}>
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                            <polyline points="16 6 12 2 8 6" />
+                            <line x1="12" y1="2" x2="12" y2="15" />
+                          </svg>
+                          <span>Сгенерировать структуру подзадач</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1395,7 +1406,25 @@ export default function BoardPage() {
                       }}
                       title={selectedTask.aiEstimate}
                     >
-                      ✨ {selectedTask.aiEstimate.replace(/^(Автооценка:|ИИ Рекомендация:|ИИ Рекомендовал\s\d+\sSP:)/, '').substring(0, 75)}...
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                        <span style={{
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          background: 'rgba(122, 27, 140, 0.2)',
+                          color: '#D6BCFA',
+                          padding: '2px 5px',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(122, 27, 140, 0.4)',
+                          marginTop: '2px',
+                          flexShrink: 0
+                        }}>
+                          Рекомендация
+                        </span>
+                        <span>
+                          {selectedTask.aiEstimate.replace(/^(Автооценка:|ИИ Рекомендация:|ИИ Рекомендовал\s\d+\sSP:)/, '').substring(0, 75)}...
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
