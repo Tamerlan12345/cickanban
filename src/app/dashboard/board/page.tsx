@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 interface Subtask {
   id: string;
@@ -48,7 +47,34 @@ interface Member {
 interface Cycle {
   id: string;
   name: string;
+  status?: string;
+  progress?: number;
+  taskCount?: number;
+  doneCount?: number;
+  totalSP?: number;
+  doneSP?: number;
+  endDate?: string | null;
 }
+
+interface TaskComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: {
+    fullName: string;
+  };
+}
+
+const parseTaskSubtasks = (value: string | null): Subtask[] => {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
 
 export default function BoardPage() {
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -76,7 +102,7 @@ export default function BoardPage() {
   // Modals / Details
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<TaskComment[]>([]);
   const [newComment, setNewComment] = useState('');
 
   // Subtasks
@@ -100,15 +126,11 @@ export default function BoardPage() {
   // Autosave
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | null>('saved');
 
-  // Current user (for comments/context)
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
-
   useEffect(() => {
     // Get current user details and project
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data.user) setCurrentUser(data.user);
         const savedProjectId = localStorage.getItem('selected_project_id');
         if (savedProjectId) {
           setProjectId(savedProjectId);
@@ -258,8 +280,7 @@ export default function BoardPage() {
     setComments([]);
     setNewComment('');
     
-    const parsedSubtasks = task.subtasks ? JSON.parse(task.subtasks) : [];
-    setSubtasks(parsedSubtasks);
+    setSubtasks(parseTaskSubtasks(task.subtasks));
 
     loadComments(task.id);
   };
@@ -352,12 +373,12 @@ export default function BoardPage() {
   };
 
   // Property Autosave mechanism
-  const handlePropertyChange = async (key: string, value: any) => {
+  const handlePropertyChange = async (key: string, value: string | number | null) => {
     if (!selectedTask) return;
 
     setSaveStatus('saving');
 
-    let updatedTask = { ...selectedTask, [key]: value };
+    const updatedTask = { ...selectedTask, [key]: value };
 
     if (key === 'assigneeId') {
       const assigneeObj = members.find((m) => m.id === value) || null;
@@ -367,6 +388,11 @@ export default function BoardPage() {
         email: assigneeObj.email,
         avatarUrl: assigneeObj.avatarUrl
       } : null;
+    }
+
+    if (key === 'cycleId') {
+      const cycleObj = cycles.find((c) => c.id === value) || null;
+      updatedTask.cycle = cycleObj ? { id: cycleObj.id, name: cycleObj.name } : null;
     }
 
     setSelectedTask(updatedTask);
@@ -436,13 +462,62 @@ export default function BoardPage() {
     return matchesSearch && matchesPriority && matchesAssignee && matchesCycle;
   });
 
+  const activeCycle = cycles.find((cycle) => cycle.status === 'ACTIVE') || null;
+  const visibleStoryPoints = filteredTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+  const activeWorkCount = filteredTasks.filter((task) => task.status === 'IN_PROGRESS').length;
+  const reviewCount = filteredTasks.filter((task) => task.status === 'REVIEW').length;
+  const doneCount = filteredTasks.filter((task) => task.status === 'DONE').length;
+  const overdueCount = filteredTasks.filter((task) => {
+    if (!task.dueDate || task.status === 'DONE') return false;
+    const today = new Date();
+    const due = new Date(task.dueDate);
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    return due.getTime() < today.getTime();
+  }).length;
+
+  const getTaskSubtaskStats = (task: Task) => {
+    const taskSubtasks = parseTaskSubtasks(task.subtasks);
+    return {
+      total: taskSubtasks.length,
+      completed: taskSubtasks.filter((subtask) => subtask.completed).length,
+    };
+  };
+
+  const getTaskCycleName = (task: Task) => {
+    return task.cycle?.name || cycles.find((cycle) => cycle.id === task.cycleId)?.name || null;
+  };
+
+  const formatTaskDate = (value: string | null) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  };
+
+  const isTaskOverdue = (task: Task) => {
+    if (!task.dueDate || task.status === 'DONE') return false;
+    const today = new Date();
+    const due = new Date(task.dueDate);
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    return due.getTime() < today.getTime();
+  };
+
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
 
   const columns = [
-    { title: '📥 Беклог (Backlog)', status: 'BACKLOG', icon: '📥', color: 'var(--status-backlog)' },
-    { title: '📋 К выполнению (To Do)', status: 'TODO', icon: '📋', color: 'var(--status-todo)' },
-    { title: '⚙️ В работе (In Progress)', status: 'IN_PROGRESS', icon: '⚙️', color: 'var(--status-in-progress)' },
-    { title: '👀 На проверке (Review)', status: 'REVIEW', icon: '👀', color: 'var(--status-review)' },
-    { title: '✅ Выполнено (Done)', status: 'DONE', icon: '✅', color: 'var(--status-done)' },
+    { title: '📥 Беклог (Backlog)', label: 'Беклог', caption: 'Входящие и идеи', status: 'BACKLOG', icon: '📥', color: 'var(--status-backlog)' },
+    { title: '📋 К выполнению (To Do)', label: 'К выполнению', caption: 'Готово к старту', status: 'TODO', icon: '📋', color: 'var(--status-todo)' },
+    { title: '⚙️ В работе (In Progress)', label: 'В работе', caption: 'Текущий WIP', status: 'IN_PROGRESS', icon: '⚙️', color: 'var(--status-in-progress)' },
+    { title: '👀 На проверке (Review)', label: 'На проверке', caption: 'Очередь ревью', status: 'REVIEW', icon: '👀', color: 'var(--status-review)' },
+    { title: '✅ Выполнено (Done)', label: 'Выполнено', caption: 'Закрытый поток', status: 'DONE', icon: '✅', color: 'var(--status-done)' },
   ];
 
   const getPriorityLabel = (priority: string) => {
@@ -476,17 +551,30 @@ export default function BoardPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '30px' }}>
+    <div className="board-page-shell">
       {/* Board Top Header Toolbar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#fff', fontFamily: "'Outfit', sans-serif" }}>
-            Centras ScramBan
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Панель управления задачами команды</p>
+      <div className="board-header">
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#fff', fontFamily: "'Outfit', sans-serif" }}>
+              Centras ScramBan
+            </h2>
+            {activeCycle && (
+              <button
+                onClick={() => setFilterCycle(activeCycle.id)}
+                className="active-cycle-chip"
+                title="Показать задачи активного спринта"
+              >
+                Активный спринт: {activeCycle.name}
+              </button>
+            )}
+          </div>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Управление задачами, WIP и спринтовым потоком команды
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className="board-actions">
           {/* View Toggles */}
           <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '3px', border: '1px solid var(--border-color)' }}>
             <button
@@ -529,9 +617,36 @@ export default function BoardPage() {
         </div>
       </div>
 
+      <div className="board-flow-grid">
+        <div className="flow-stat">
+          <span>Видимых задач</span>
+          <strong>{filteredTasks.length}</strong>
+        </div>
+        <div className="flow-stat">
+          <span>В работе</span>
+          <strong>{activeWorkCount}</strong>
+        </div>
+        <div className="flow-stat">
+          <span>На ревью</span>
+          <strong>{reviewCount}</strong>
+        </div>
+        <div className="flow-stat">
+          <span>Готово</span>
+          <strong>{doneCount}</strong>
+        </div>
+        <div className="flow-stat">
+          <span>Story Points</span>
+          <strong>{visibleStoryPoints}</strong>
+        </div>
+        <div className={`flow-stat${overdueCount > 0 ? ' flow-stat-alert' : ''}`}>
+          <span>Просрочено</span>
+          <strong>{overdueCount}</strong>
+        </div>
+      </div>
+
       {/* Search and Filters bar */}
       <div
-        className="glass-card"
+        className="glass-card board-filters"
         style={{
           display: 'flex',
           padding: '12px 18px',
@@ -626,10 +741,11 @@ export default function BoardPage() {
       </div>
 
       {/* Main Board View: Kanban vs List */}
-      <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <div className="board-workspace">
         {viewMode === 'kanban' ? (
           /* Kanban Board View */
           <div
+            className="kanban-columns"
             style={{
               display: 'flex',
               gap: '16px',
@@ -642,13 +758,15 @@ export default function BoardPage() {
             {columns.map((col) => {
               const colTasks = filteredTasks.filter((t) => t.status === col.status);
               const isOver = dragOverColumn === col.status;
+              const colPoints = colTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+              const isWipColumn = col.status === 'IN_PROGRESS' || col.status === 'REVIEW';
 
               return (
                 <div
                   key={col.status}
                   onDragOver={(e) => handleDragOver(e, col.status)}
                   onDrop={(e) => handleDrop(e, col.status)}
-                  className="glass-panel"
+                  className="glass-panel kanban-column"
                   style={{
                     width: '320px',
                     flexShrink: 0,
@@ -662,74 +780,133 @@ export default function BoardPage() {
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', padding: '0 8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '13px', color: col.color }}>{col.icon}</span>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#FFF' }}>{col.title.split(' ')[1]}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', padding: '0 8px', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '13px', color: col.color }}>{col.icon}</span>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#FFF' }}>{col.label}</span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {col.caption}{colPoints > 0 ? ` · ${colPoints} SP` : ''}
+                      </span>
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(255, 255, 255, 0.05)', padding: '2px 8px', borderRadius: '20px', color: 'var(--text-secondary)' }}>
-                      {colTasks.length}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {isWipColumn && (
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#F6E05E', background: 'rgba(214,158,46,0.12)', border: '1px solid rgba(214,158,46,0.26)', padding: '2px 6px', borderRadius: '6px' }}>
+                          WIP
+                        </span>
+                      )}
+                      <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(255, 255, 255, 0.05)', padding: '2px 8px', borderRadius: '20px', color: 'var(--text-secondary)' }}>
+                        {colTasks.length}
+                      </span>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flexGrow: 1, padding: '4px' }}>
-                    {colTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, task.id)}
-                        onClick={() => selectTask(task)}
-                        className="glass-card"
-                        style={{
-                          padding: '16px 16px 16px 14px',
-                          borderRadius: '8px',
-                          borderLeft: task.priority !== 'NONE' ? `4px solid ${getPriorityColor(task.priority)}` : '1px solid var(--border-color)',
-                          cursor: 'grab',
-                          opacity: draggedTaskId === task.id ? 0.4 : 1,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '10px',
-                        }}
-                      >
-                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff', lineHeight: '1.4' }}>
-                          {task.title}
-                        </span>
+                    {colTasks.length > 0 ? (
+                      colTasks.map((task) => {
+                        const subtaskStats = getTaskSubtaskStats(task);
+                        const cycleName = getTaskCycleName(task);
+                        const dueDate = formatTaskDate(task.dueDate);
+                        const isOverdue = isTaskOverdue(task);
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            {task.points > 0 && (
-                              <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(122, 27, 140, 0.15)', color: '#D6BCFA', padding: '2px 6px', borderRadius: '4px', border: '1px dashed rgba(122, 27, 140, 0.4)' }}>
-                                {task.points} SP
-                              </span>
+                        return (
+                          <div
+                            key={task.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task.id)}
+                            onClick={() => selectTask(task)}
+                            className="glass-card kanban-task-card"
+                            style={{
+                              padding: '16px 16px 14px 14px',
+                              borderRadius: '8px',
+                              borderLeft: task.priority !== 'NONE' ? `4px solid ${getPriorityColor(task.priority)}` : '1px solid var(--border-color)',
+                              cursor: 'grab',
+                              opacity: draggedTaskId === task.id ? 0.4 : 1,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '10px',
+                            }}
+                          >
+                            <span style={{ fontSize: '14px', fontWeight: 650, color: '#fff', lineHeight: '1.4' }}>
+                              {task.title}
+                            </span>
+
+                            {(cycleName || dueDate || subtaskStats.total > 0) && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {cycleName && (
+                                  <span className="task-meta-pill">
+                                    {cycleName}
+                                  </span>
+                                )}
+                                {dueDate && (
+                                  <span className={`task-meta-pill${isOverdue ? ' overdue' : ''}`}>
+                                    {dueDate}
+                                  </span>
+                                )}
+                                {subtaskStats.total > 0 && (
+                                  <span className="task-meta-pill">
+                                    {subtaskStats.completed}/{subtaskStats.total} подзадач
+                                  </span>
+                                )}
+                              </div>
                             )}
-                          </div>
 
-                          {task.assignee ? (
-                            <div
-                              title={task.assignee.fullName}
-                              style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                background: 'var(--centras-gradient)',
-                                color: '#fff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '10px',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {task.assignee.fullName.charAt(0).toUpperCase()}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px', gap: '10px' }}>
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', minWidth: 0 }}>
+                                <span
+                                  style={{
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    background: `${getPriorityColor(task.priority)}18`,
+                                    color: getPriorityColor(task.priority),
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {getPriorityLabel(task.priority).replace(/^[^\s]+\s/, '')}
+                                </span>
+                                {task.points > 0 && (
+                                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(122, 27, 140, 0.15)', color: '#D6BCFA', padding: '2px 6px', borderRadius: '4px', border: '1px dashed rgba(122, 27, 140, 0.4)' }}>
+                                    {task.points} SP
+                                  </span>
+                                )}
+                              </div>
+
+                              {task.assignee ? (
+                                <div
+                                  title={task.assignee.fullName}
+                                  style={{
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    background: 'var(--centras-gradient)',
+                                    color: '#fff',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {getInitials(task.assignee.fullName)}
+                                </div>
+                              ) : (
+                                <div title="Не назначен" style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>
+                                  -
+                                </div>
+                              )}
                             </div>
-                          ) : (
-                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
-                              👤
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="kanban-empty-column">
+                        Нет задач. Перетащите карточку сюда, когда работа перейдет в этот этап.
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               );
@@ -760,7 +937,7 @@ export default function BoardPage() {
                         ▼
                       </span>
                       <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#fff' }}>
-                        {col.icon} {col.title.split(' ')[1]}
+                        {col.icon} {col.label}
                       </span>
                       <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(255, 255, 255, 0.06)', padding: '2px 8px', borderRadius: '10px', color: 'var(--text-secondary)' }}>
                         {colTasks.length}
@@ -772,85 +949,98 @@ export default function BoardPage() {
                   {!isCollapsed && (
                     <div style={{ display: 'flex', flexDirection: 'column', marginTop: '14px', gap: '8px' }}>
                       {colTasks.length > 0 ? (
-                        colTasks.map((task) => (
-                          <div
-                            key={task.id}
-                            onClick={() => selectTask(task)}
-                            className="glass-card"
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '12px 18px',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexGrow: 1 }}>
-                              <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>
-                                {task.title}
-                              </span>
-                              
-                              {task.subtasks && (
-                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                  ({JSON.parse(task.subtasks).filter((s: Subtask) => s.completed).length} / {JSON.parse(task.subtasks).length} подзадач)
+                        colTasks.map((task) => {
+                          const subtaskStats = getTaskSubtaskStats(task);
+                          const cycleName = getTaskCycleName(task);
+                          const dueDate = formatTaskDate(task.dueDate);
+
+                          return (
+                            <div
+                              key={task.id}
+                              onClick={() => selectTask(task)}
+                              className="glass-card"
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '12px 18px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                gap: '16px',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexGrow: 1, minWidth: 0, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>
+                                  {task.title}
                                 </span>
-                              )}
-                            </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                              <span
-                                style={{
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  padding: '4px 8px',
-                                  borderRadius: '4px',
-                                  background: `${getPriorityColor(task.priority)}15`,
-                                  color: getPriorityColor(task.priority),
-                                }}
-                              >
-                                {getPriorityLabel(task.priority)}
-                              </span>
+                                {cycleName && (
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    {cycleName}
+                                  </span>
+                                )}
 
-                              {task.points > 0 && (
-                                <span style={{ fontSize: '11px', fontWeight: 600, background: 'rgba(122, 27, 140, 0.15)', color: '#D6BCFA', padding: '4px 8px', borderRadius: '4px' }}>
-                                  ⚡ {task.points} SP
-                                </span>
-                              )}
+                                {subtaskStats.total > 0 && (
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    ({subtaskStats.completed} / {subtaskStats.total} подзадач)
+                                  </span>
+                                )}
+                              </div>
 
-                              {task.dueDate && (
-                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                  📅 {new Date(task.dueDate).toLocaleDateString()}
-                                </span>
-                              )}
-
-                              {task.assignee ? (
-                                <div
-                                  title={task.assignee.fullName}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                <span
                                   style={{
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '50%',
-                                    background: 'var(--centras-gradient)',
-                                    color: '#fff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '10px',
-                                    fontWeight: 700,
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    background: `${getPriorityColor(task.priority)}15`,
+                                    color: getPriorityColor(task.priority),
                                   }}
                                 >
-                                  {task.assignee.fullName.charAt(0).toUpperCase()}
-                                </div>
-                              ) : (
-                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
-                                  👤
-                                </div>
-                              )}
+                                  {getPriorityLabel(task.priority)}
+                                </span>
+
+                                {task.points > 0 && (
+                                  <span style={{ fontSize: '11px', fontWeight: 600, background: 'rgba(122, 27, 140, 0.15)', color: '#D6BCFA', padding: '4px 8px', borderRadius: '4px' }}>
+                                    {task.points} SP
+                                  </span>
+                                )}
+
+                                {dueDate && (
+                                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                    {dueDate}
+                                  </span>
+                                )}
+
+                                {task.assignee ? (
+                                  <div
+                                    title={task.assignee.fullName}
+                                    style={{
+                                      width: '24px',
+                                      height: '24px',
+                                      borderRadius: '50%',
+                                      background: 'var(--centras-gradient)',
+                                      color: '#fff',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '10px',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {getInitials(task.assignee.fullName)}
+                                  </div>
+                                ) : (
+                                  <div title="Не назначен" style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    -
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                       ) : (
                         <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '13px' }}>
                           В этой колонке нет задач.
@@ -1448,6 +1638,135 @@ export default function BoardPage() {
 
 
       <style jsx global>{`
+        .board-page-shell {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          min-height: 0;
+          padding: 28px;
+        }
+        .board-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 18px;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+        }
+        .board-actions {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+        .active-cycle-chip {
+          border: 1px solid rgba(56, 161, 105, 0.35);
+          background: rgba(56, 161, 105, 0.12);
+          color: #9ae6b4;
+          border-radius: 8px;
+          padding: 5px 9px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        .board-flow-grid {
+          display: grid;
+          grid-template-columns: repeat(6, minmax(112px, 1fr));
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+        .flow-stat {
+          min-height: 62px;
+          padding: 10px 12px;
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.025);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .flow-stat span {
+          color: var(--text-muted);
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+        .flow-stat strong {
+          color: #fff;
+          font-size: 20px;
+          line-height: 1;
+          font-family: 'Outfit', sans-serif;
+        }
+        .flow-stat-alert {
+          border-color: rgba(229, 62, 62, 0.35);
+          background: rgba(229, 62, 62, 0.09);
+        }
+        .board-workspace {
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+          overflow-y: auto;
+        }
+        .kanban-columns {
+          min-height: 0;
+        }
+        .kanban-column {
+          min-height: 420px;
+        }
+        .kanban-task-card {
+          overflow: hidden;
+        }
+        .task-meta-pill {
+          max-width: 100%;
+          border: 1px solid var(--border-color);
+          border-radius: 6px;
+          background: rgba(255, 255, 255, 0.035);
+          color: var(--text-secondary);
+          font-size: 11px;
+          font-weight: 600;
+          line-height: 1.2;
+          padding: 4px 7px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .task-meta-pill.overdue {
+          border-color: rgba(229, 62, 62, 0.35);
+          color: #fc8181;
+          background: rgba(229, 62, 62, 0.1);
+        }
+        .kanban-empty-column {
+          border: 1px dashed var(--border-color);
+          border-radius: 8px;
+          color: var(--text-muted);
+          font-size: 12px;
+          line-height: 1.5;
+          padding: 18px 14px;
+          text-align: center;
+        }
+        @media (max-width: 1180px) {
+          .board-flow-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 768px) {
+          .board-page-shell {
+            padding: 16px;
+          }
+          .board-actions {
+            width: 100%;
+            justify-content: flex-start;
+          }
+          .board-flow-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .kanban-column {
+            width: 280px !important;
+            max-height: calc(100vh - 300px) !important;
+          }
+        }
         @keyframes slideLeft {
           from {
             transform: translateX(100%);
